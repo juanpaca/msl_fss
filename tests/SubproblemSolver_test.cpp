@@ -49,3 +49,25 @@ TEST_CASE("Physical axis wraps facade with correct traits", "[unit][subproblem]"
     REQUIRE(MechanicsPhysics::kTransient == false);
     REQUIRE(MechanicsPhysics::kVectorial == true);
 }
+
+TEST_CASE("MultiscaleSolver materializes the skeleton contributions",
+          "[unit][subproblem]") {
+    Config cfg;
+    cfg.set("numelems", "4");
+    cfg.set("ndof_local", "3");
+
+    SharedMHMHierarchy hierarchy;
+    hierarchy.Build(cfg);
+
+    FlowMHMT flow;
+    flow.Setup(&hierarchy);
+    flow.Offline();
+    REQUIRE(flow.isOffline());
+
+    flow.resolver().GetSkeletonContributions();
+    REQUIRE(flow.resolver().isSkeletonReady());
+    REQUIRE(flow.resolver().skeletonContribs().size() == hierarchy.numSubMeshes());
+    for (std::size_t K = 0; K < flow.resolver().skeletonContribs().size(); ++K) {
+        REQUIRE(flow.resolver().skeletonContribs()[K].rows() == 2);
+    }
+}

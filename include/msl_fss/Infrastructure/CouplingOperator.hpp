@@ -1,6 +1,7 @@
 #ifndef MSL_FSS_INFRASTRUCTURE_COUPLINGOPERATOR_HPP
 #define MSL_FSS_INFRASTRUCTURE_COUPLINGOPERATOR_HPP
 
+#include "msl_fss/Infrastructure/Matrix.hpp"
 #include "msl_fss/Types/Types.hpp"
 
 #include <cstddef>
@@ -26,12 +27,19 @@ public:
     // Computes the (dummy) volumetric average stress per macro-element.
     Field ComputeVolumetricStress(const Field& u, const Field& p) const;
 
+    // Divergence-coupling matrix D_K of macro-element K, used by the multiscale
+    // assembly (mechanics load = alpha * D_K^T * P). Dummy: identity; in the
+    // real stack this is the mfem::SparseMatrix restriction of the divergence
+    // operator to the macro-element K.
+    DenseMatrix GetDivMatrix(std::size_t K) const;
+
     double alpha() const { return alpha_; }
     double Kdr() const { return Kdr_; }
 
 private:
     double alpha_;
     double Kdr_;
+    static constexpr std::size_t kLocalDofs_ = 4;
 };
 
 } // namespace msl_fss

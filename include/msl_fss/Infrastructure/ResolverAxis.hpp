@@ -72,19 +72,38 @@ public:
     }
     LinearSystem& GetSystem() override { return system_; }
 
+    // After Offline(), materializes the assembled skeleton contributions (one
+    // entry per macro-element) by reading back the stored local forms. Dummy:
+    // the real product walks the MHMGlobalProblem::GetSkeletonContributions().
+    void GetSkeletonContributions() {
+        skeletonContribs_.clear();
+        if (!hierarchy_) return;
+        const auto& partition = hierarchy_->GetPartition();
+        for (std::size_t K = partition.elementStart; K < partition.elementEnd; ++K) {
+            skeletonContribs_.push_back(store_.Fetch(K));
+        }
+        skeletonReady_ = true;
+    }
+
     const OfflineStore& store() const { return store_; }
     OfflineStore& store() { return store_; }
     const SharedMHMHierarchy* hierarchy() const { return hierarchy_; }
+    const std::vector<DenseMatrix>& skeletonContribs() const {
+        return skeletonContribs_;
+    }
     bool isSetup() const { return setup_; }
     bool isOffline() const { return offline_; }
+    bool isSkeletonReady() const { return skeletonReady_; }
 
 private:
     SharedMHMHierarchy* hierarchy_ = nullptr;
     LinearSystem system_;
     OfflineStore store_;
+    std::vector<DenseMatrix> skeletonContribs_;
     std::size_t ndof_ = 4;
     bool setup_ = false;
     bool offline_ = false;
+    bool skeletonReady_ = false;
 };
 
 } // namespace msl_fss

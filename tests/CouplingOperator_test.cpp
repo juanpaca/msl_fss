@@ -43,3 +43,22 @@ TEST_CASE("CouplingOperator exposes alpha and Kdr", "[unit][coupling]") {
     REQUIRE(op.alpha() == Approx(1.5));
     REQUIRE(op.Kdr() == Approx(7.0));
 }
+
+TEST_CASE("CouplingOperator provides the divergence matrix D_K",
+          "[unit][coupling]") {
+    const double alpha = 2.0;
+    CouplingOperator op(alpha, 5.0);
+
+    Field p(4);
+    p[0] = 1.0; p[1] = 2.0; p[2] = 3.0; p[3] = 4.0;
+
+    // Dummy D_K = I: D^T * p == p, independent of the macro-element K.
+    REQUIRE(op.GetDivMatrix(0).mul(p.data()) == p.data());
+    REQUIRE(op.GetDivMatrix(7).mul(p.data()) == p.data());
+
+    // ApplyPressureToMech is the alpha-scaled D^T * P application.
+    Field load = op.ApplyPressureToMech(p);
+    for (std::size_t i = 0; i < p.size(); ++i) {
+        REQUIRE(load[i] == Approx(alpha * p[i]));
+    }
+}

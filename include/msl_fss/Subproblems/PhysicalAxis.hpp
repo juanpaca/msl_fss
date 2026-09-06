@@ -7,7 +7,10 @@
 
 namespace msl_fss {
 
-// Compile-time traits, mirroring the MFEMTraits of the MSL stack.
+// Compile-time traits of the product: the regime flags (TRANSIENT /
+// STATIONARY) mirror RegimeTrait<T> of msl_core; the arity (SCALAR /
+// VECTORIAL) is local to the physical axis and selects the fachada used by
+// the dummy implementation.
 struct MFEMTraits {
     static constexpr bool TRANSIENT = true;
     static constexpr bool STATIONARY = false;
