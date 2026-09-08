@@ -43,6 +43,11 @@ TEST_CASE("Physical axis wraps facade with correct traits", "[unit][subproblem]"
     REQUIRE(FlowPhysics::kTransient == true);
     REQUIRE(FlowPhysics::kVectorial == false);
 
+    Field pressure(2);
+    pressure[0] = 1.0;
+    pressure[1] = 2.0;
+    REQUIRE(flow.Solve(pressure).data() == pressure.data());
+
     MechanicsPhysics mech;
     mech.Setup(cfg);
     REQUIRE(mech.isConfigured());

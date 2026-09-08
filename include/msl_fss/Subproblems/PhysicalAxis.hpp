@@ -31,9 +31,7 @@ public:
         configured_ = true;
     }
     void AssembleSystem() { assembled_ = true; }
-    Field Solve(const Field& rhs) const {
-        return rhs; // dummy: identity solve
-    }
+    Field Solve(const Field& rhs) const { return facade_.Solve(rhs); }
 
     const FacadeType& facade() const { return facade_; }
     bool isConfigured() const { return configured_; }
@@ -58,7 +56,7 @@ public:
         configured_ = true;
     }
     void AssembleSystem() { assembled_ = true; }
-    Field Solve(const Field& rhs) const { return rhs; }
+    Field Solve(const Field& rhs) const { return facade_.Solve(rhs); }
 
     const FacadeType& facade() const { return facade_; }
     bool isConfigured() const { return configured_; }

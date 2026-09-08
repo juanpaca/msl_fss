@@ -19,6 +19,12 @@ target_link_libraries(tests_fss PRIVATE msl_fss Catch2::Catch2)
 set_target_properties(tests_fss PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 
 add_test(NAME tests_fss COMMAND tests_fss)
+add_test(NAME smoke_fss_galerkin
+    COMMAND $<TARGET_FILE:main_fss_galerkin>
+            ${CMAKE_SOURCE_DIR}/examples/config_fss_galerkin.ini)
+add_test(NAME smoke_fss_mhm
+    COMMAND $<TARGET_FILE:main_fss_mhm>
+            ${CMAKE_SOURCE_DIR}/examples/config_fss_mhm.ini)
 
 if(RUN_TESTS)
     add_custom_command(TARGET tests_fss POST_BUILD

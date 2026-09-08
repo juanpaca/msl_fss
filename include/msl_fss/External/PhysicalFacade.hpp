@@ -36,6 +36,10 @@ public:
     double alpha() const { return alpha_; }
     double Kdr() const { return kdr_; }
 
+    // Dummy boundary of the physical library: preserve the resolved field.
+    // The real facade maps this operation to its MFEM grid function.
+    Field Solve(const Field& field) const { return field; }
+
 private:
     double alpha_ = 1.0;
     double kdr_ = 1.0;

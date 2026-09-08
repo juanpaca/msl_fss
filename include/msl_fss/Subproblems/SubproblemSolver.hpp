@@ -50,7 +50,9 @@ public:
     }
 
     Field Online(const Field& rhs) override {
-        return resolver_.Online(rhs);
+        // Keep the physical facade in the online path. Both dummy stages are
+        // identities, but the call chain matches the future MFEM adapter.
+        return physics_.Solve(resolver_.Online(rhs));
     }
 
     LinearSystem& GetSystem() override { return resolver_.GetSystem(); }
