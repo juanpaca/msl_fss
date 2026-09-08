@@ -22,8 +22,9 @@ enum class Strategy { GALERKIN = 0, MHM = 1 };
 
 // Possible outcomes of a Fixed-Stress Split iteration.
 enum class FSSStatus {
+    ITERATING,   // one FSS iteration completed; the stopping criterion is pending
     CONVERGED,   // relative error below tolerance within kMax iterations
-    DIVERGED,    // residual increased beyond a safety bound
+    DIVERGED,    // non-finite field detected
     MAX_ITER     // tolerance not reached within kMax iterations
 };
 

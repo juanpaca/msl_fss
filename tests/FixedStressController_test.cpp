@@ -101,7 +101,7 @@ TEST_CASE("FixedStressController RelativeError computes the relative norm",
 }
 
 TEST_CASE("FixedStressController converges on the dummy identity path",
-          "[unit][fss]") {
+           "[unit][fss]") {
     Config cfg;
     cfg.set("alpha", "1.0");
     cfg.set("Kdr", "2.0");
@@ -114,6 +114,20 @@ TEST_CASE("FixedStressController converges on the dummy identity path",
 
     controller.Configure(cfg);
     REQUIRE(controller.RunTimeStep(0.1) == FSSStatus::CONVERGED);
+}
+
+TEST_CASE("FixedStressController exposes one FSS iteration", "[unit][fss]") {
+    Config cfg;
+    SharedMHMHierarchy hierarchy;
+    CouplingOperator coupling(1.0, 2.0);
+    IdentitySub flow, mech;
+    FixedStressController<IdentitySub, IdentitySub> controller(flow, mech,
+                                                                coupling, hierarchy);
+
+    controller.Configure(cfg);
+    controller.BeginTimeStep(0.1);
+    REQUIRE(controller.RunFixedStressIteration() == FSSStatus::CONVERGED);
+    REQUIRE_THROWS_AS(controller.RunFixedStressIteration(), std::runtime_error);
 }
 
 TEST_CASE("FixedStressController terminates by MAX_ITER with zero iterations",

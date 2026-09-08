@@ -54,8 +54,14 @@ public:
         ready_ = true;
     }
 
-    // Executes one complete time step (dt), returning the FSS status. Requires
-    // Configure() to have been called.
+    // Starts one time step. The caller owns the FSS iteration loop and calls
+    // RunFixedStressIteration() until a terminal status is returned.
+    void BeginTimeStep(double dt);
+
+    // Executes flow, coupling, mechanics and the convergence check once.
+    FSSStatus RunFixedStressIteration();
+
+    // Convenience wrapper for clients that do not need the FSS loop exposed.
     FSSStatus RunTimeStep(double dt);
 
     // Relative error in a discrete H1 norm between prev and curr. The dummy
@@ -79,6 +85,10 @@ private:
     int kMax_ = 100;
     double L_ = 1.0;
     bool ready_ = false;
+    bool timeStepActive_ = false;
+    Field sigmaV_;
+    Field pressure_;
+    Field move_;
 };
 
 // --- inlined dummy implementation -----------------------------------------
@@ -123,51 +133,69 @@ bool FixedStressController<FlowSub, MechSub>::CheckConvergence(
 }
 
 template <typename FlowSub, typename MechSub>
-FSSStatus FixedStressController<FlowSub, MechSub>::RunTimeStep(double dt) {
+void FixedStressController<FlowSub, MechSub>::BeginTimeStep(double dt) {
     if (!ready_) throw std::runtime_error(
-        "FixedStressController::RunTimeStep requires Configure() first");
+        "FixedStressController::BeginTimeStep requires Configure() first");
 
     // sigmaV initial guess from the previous state (dummy).
     const std::size_t n = 4;
-    Field sigmaV(n);
-    Field pressure(n);
-    Field move(n);
-
-    int k = 0;
-    for (; k < kMax_; ++k) {
-        Field pressurePrev = pressure;
-        Field movePrev = move;
-
-        // Flow step: freeze sigmaV.
-        Field pNew = SolveFlow(sigmaV);
-        // Coupling: pressure load into mechanics via integration by parts.
-        Field mechLoad = coupling_.ApplyPressureToMech(pNew);
-        // Mechanics step with the new pressure.
-        Field uNew = SolveMechanics(mechLoad);
-        // Volumetric stress update for the next flow step.
-        Field sigmaVnew = coupling_.ComputeVolumetricStress(uNew, pNew);
-
-        for (double value : pNew.data()) {
-            if (!std::isfinite(value)) return FSSStatus::DIVERGED;
-        }
-        for (double value : uNew.data()) {
-            if (!std::isfinite(value)) return FSSStatus::DIVERGED;
-        }
-
-        bool conv = CheckConvergence(pressurePrev, pNew, tolerance_)
-                 && CheckConvergence(movePrev, uNew, tolerance_);
-        if (conv) {
-            pressure = pNew;
-            move = uNew;
-            sigmaV = sigmaVnew;
-            return FSSStatus::CONVERGED;
-        }
-        pressure = pNew;
-        move = uNew;
-        sigmaV = sigmaVnew;
-    }
+    sigmaV_ = Field(n);
+    pressure_ = Field(n);
+    move_ = Field(n);
+    timeStepActive_ = true;
     (void)dt;
-    return k >= kMax_ ? FSSStatus::MAX_ITER : FSSStatus::DIVERGED;
+}
+
+template <typename FlowSub, typename MechSub>
+FSSStatus FixedStressController<FlowSub, MechSub>::RunFixedStressIteration() {
+    if (!timeStepActive_) throw std::runtime_error(
+        "FixedStressController::RunFixedStressIteration requires BeginTimeStep()");
+
+    Field pressurePrev = pressure_;
+    Field movePrev = move_;
+
+    // Flow step: freeze sigmaV.
+    Field pNew = SolveFlow(sigmaV_);
+    // Coupling: pressure load into mechanics via integration by parts.
+    Field mechLoad = coupling_.ApplyPressureToMech(pNew);
+    // Mechanics step with the new pressure.
+    Field uNew = SolveMechanics(mechLoad);
+    // Volumetric stress update for the next flow step.
+    Field sigmaVnew = coupling_.ComputeVolumetricStress(uNew, pNew);
+
+    for (double value : pNew.data()) {
+        if (!std::isfinite(value)) {
+            timeStepActive_ = false;
+            return FSSStatus::DIVERGED;
+        }
+    }
+    for (double value : uNew.data()) {
+        if (!std::isfinite(value)) {
+            timeStepActive_ = false;
+            return FSSStatus::DIVERGED;
+        }
+    }
+
+    pressure_ = pNew;
+    move_ = uNew;
+    sigmaV_ = sigmaVnew;
+    if (CheckConvergence(pressurePrev, pNew, tolerance_)
+        && CheckConvergence(movePrev, uNew, tolerance_)) {
+        timeStepActive_ = false;
+        return FSSStatus::CONVERGED;
+    }
+    return FSSStatus::ITERATING;
+}
+
+template <typename FlowSub, typename MechSub>
+FSSStatus FixedStressController<FlowSub, MechSub>::RunTimeStep(double dt) {
+    BeginTimeStep(dt);
+    for (int k = 0; k < kMax_; ++k) {
+        const FSSStatus status = RunFixedStressIteration();
+        if (status != FSSStatus::ITERATING) return status;
+    }
+    timeStepActive_ = false;
+    return FSSStatus::MAX_ITER;
 }
 
 } // namespace msl_fss

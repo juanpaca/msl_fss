@@ -31,10 +31,12 @@ strategy materialized by the two entry points. The `SubproblemSolver<Physics,
 Resolver, Self>` template uses CRTP static dispatch, the same device used by
 `MFEMProblem<Derived>` in the MSL stack.
 
-`PoromechanicsMFEMProblem<FlowSub, MechSub>::Run` owns the orchestration of a
-typed controller and returns `CONVERGED`, `MAX_ITER`, or `DIVERGED`. The dummy
-uses a discrete H1 norm (coefficient plus first-difference terms) for the FSS
-convergence check.
+The entry points make the time loop and the FSS loop explicit. Each time step
+calls `BeginTimeStep(dt)` and repeatedly calls `RunFixedStressIteration()` until
+it returns `CONVERGED`, `DIVERGED`, or the main reaches `kMax`. The
+`PoromechanicsMFEMProblem<FlowSub, MechSub>::Run` facade keeps a convenience
+wrapper for clients that do not need the loops exposed. The dummy uses a
+discrete H1 norm (coefficient plus first-difference terms) for convergence.
 
 ## How to compile
 
