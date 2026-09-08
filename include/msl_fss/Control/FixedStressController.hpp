@@ -58,8 +58,8 @@ public:
     // Configure() to have been called.
     FSSStatus RunTimeStep(double dt);
 
-    // Relative error in the (dummy) Euclidean norm between prev and curr,
-    // used by the H1 convergence test (\eqref{eq:convergence}).
+    // Relative error in a discrete H1 norm between prev and curr. The dummy
+    // gradient is the first difference of neighboring coefficients.
     double RelativeError(const Field& prev, const Field& curr) const;
 
     bool isReady() const { return ready_; }
@@ -91,6 +91,12 @@ double FixedStressController<FlowSub, MechSub>::RelativeError(
     for (std::size_t i = 0; i < curr.size(); ++i) {
         num += diff[i] * diff[i];
         den += curr[i] * curr[i];
+        if (i > 0) {
+            const double diffGrad = diff[i] - diff[i - 1];
+            const double currGrad = curr[i] - curr[i - 1];
+            num += diffGrad * diffGrad;
+            den += currGrad * currGrad;
+        }
     }
     return std::sqrt(num / (den + 1e-300));
 }
@@ -140,6 +146,13 @@ FSSStatus FixedStressController<FlowSub, MechSub>::RunTimeStep(double dt) {
         Field uNew = SolveMechanics(mechLoad);
         // Volumetric stress update for the next flow step.
         Field sigmaVnew = coupling_.ComputeVolumetricStress(uNew, pNew);
+
+        for (double value : pNew.data()) {
+            if (!std::isfinite(value)) return FSSStatus::DIVERGED;
+        }
+        for (double value : uNew.data()) {
+            if (!std::isfinite(value)) return FSSStatus::DIVERGED;
+        }
 
         bool conv = CheckConvergence(pressurePrev, pNew, tolerance_)
                  && CheckConvergence(movePrev, uNew, tolerance_);

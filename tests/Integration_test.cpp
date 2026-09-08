@@ -64,8 +64,8 @@ TEST_CASE("PoromechanicsMFEMProblem facade runs and exports",
     cfg.set("alpha", "1.0");
     cfg.set("Kdr", "2.0");
 
-    PoromechanicsMFEMProblem facade;
-    facade.Run(cfg);
+    PoromechanicsMFEMProblem<FlowGal, MechGal> facade;
+    REQUIRE(facade.Run(cfg) == FSSStatus::CONVERGED);
     REQUIRE(facade.ran());
     facade.ExportResults();
     REQUIRE(facade.exported());

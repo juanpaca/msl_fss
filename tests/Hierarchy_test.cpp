@@ -32,6 +32,9 @@ TEST_CASE("SharedMHMHierarchy builds a partition and sub-meshes",
     REQUIRE(hierarchy.GetPartition().elementStart == 0);
     REQUIRE(hierarchy.GetPartition().elementEnd == 8);
     REQUIRE(hierarchy.numSubMeshes() == 8);
+    REQUIRE(hierarchy.GetEdgeMesh().dofs == 8);
+    REQUIRE(hierarchy.GetSubMesh(0).id == 0);
+    REQUIRE(hierarchy.GetSubMesh(7).dofs == 3);
     REQUIRE(hierarchy.GetSubMeshDofs(0) == 3);
     REQUIRE(hierarchy.GetSubMeshDofs(7) == 3);
 }

@@ -17,6 +17,7 @@ struct PartitionInfo {
     std::size_t elementStart = 0;  // first macro-element owned by this rank
     std::size_t elementEnd = 0;    // one past the last owned macro-element
     int rank = 0;                  // current MPI rank
+    int mpiSize = 1;               // number of MPI ranks
 
     std::size_t GetNumElements() const { return elementEnd - elementStart; }
     std::pair<std::size_t, std::size_t> GetRange() const {

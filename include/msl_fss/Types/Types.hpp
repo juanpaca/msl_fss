@@ -18,7 +18,7 @@ namespace msl_fss {
 // points (main_fss_galerkin / main_fss_mhm), not by runtime configuration.
 enum class Frame { FLOW = 0, MECHANICS = 1 };
 
-enum class SolverStrategy { GALERKIN = 0, MHM = 1 };
+enum class Strategy { GALERKIN = 0, MHM = 1 };
 
 // Possible outcomes of a Fixed-Stress Split iteration.
 enum class FSSStatus {

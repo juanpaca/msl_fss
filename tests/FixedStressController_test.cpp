@@ -7,6 +7,7 @@
 #include "msl_fss/Types/Types.hpp"
 
 #include <stdexcept>
+#include <limits>
 
 using namespace msl_fss;
 
@@ -33,6 +34,16 @@ struct AlternatingFlow {
     void Setup(SharedMHMHierarchy*) {}
     void Offline() {}
     bool flip_ = false;
+};
+
+struct DivergingFlow {
+    Field Online(const Field&) {
+        Field f(4);
+        f[0] = std::numeric_limits<double>::quiet_NaN();
+        return f;
+    }
+    void Setup(SharedMHMHierarchy*) {}
+    void Offline() {}
 };
 
 } // namespace
@@ -141,4 +152,18 @@ TEST_CASE("FixedStressController without convergence terminates by MAX_ITER",
     // The oscillating pressure never satisfies the relative-error test, so the
     // loop runs up to kMax_ and the status is MAX_ITER.
     REQUIRE(controller.RunTimeStep(0.1) == FSSStatus::MAX_ITER);
+}
+
+TEST_CASE("FixedStressController reports DIVERGED for non-finite fields",
+           "[unit][fss]") {
+    Config cfg;
+    SharedMHMHierarchy hierarchy;
+    CouplingOperator coupling(1.0, 2.0);
+    DivergingFlow flow;
+    IdentitySub mech;
+    FixedStressController<DivergingFlow, IdentitySub> controller(flow, mech,
+                                                                  coupling, hierarchy);
+
+    controller.Configure(cfg);
+    REQUIRE(controller.RunTimeStep(0.1) == FSSStatus::DIVERGED);
 }

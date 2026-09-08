@@ -11,7 +11,7 @@ The module structure mirrors the detailed project:
 ```
 include/msl_fss/
   Types/            Strategy, FSSStatus, Field (dummy), Config (dummy)
-  Control/          PoromechanicsMFEMProblem (facade), FixedStressController<F,M>
+  Control/          PoromechanicsMFEMProblem<F,M> (facade), FixedStressController<F,M>
   Subproblems/      ISubproblemSolver, SubproblemSolver<Physics,Resolver,Self> (CRTP)
                     FlowPhysics, MechanicsPhysics
   Infrastructure/   GalerkinSolver, MultiscaleSolver, CouplingOperator,
@@ -30,6 +30,11 @@ The *physical axis* classes (`FlowPhysics`, `MechanicsPhysics`) wrap the
 strategy materialized by the two entry points. The `SubproblemSolver<Physics,
 Resolver, Self>` template uses CRTP static dispatch, the same device used by
 `MFEMProblem<Derived>` in the MSL stack.
+
+`PoromechanicsMFEMProblem<FlowSub, MechSub>::Run` owns the orchestration of a
+typed controller and returns `CONVERGED`, `MAX_ITER`, or `DIVERGED`. The dummy
+uses a discrete H1 norm (coefficient plus first-difference terms) for the FSS
+convergence check.
 
 ## How to compile
 

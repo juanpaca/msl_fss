@@ -7,7 +7,10 @@ Field CouplingOperator::ApplyPressureToMech(const Field& pressure,
     // load = alpha * D_K^T * P with the dummy D_K = I (the divergence matrix
     // of each macro-element in the real product, applied by integration by
     // parts).
-    const DenseMatrix D = GetDivMatrix(0);
+    // The dummy has no mesh-derived D_K. Match the identity proxy to the
+    // supplied field so test fields cannot access outside a fixed local block.
+    DenseMatrix D(pressure.size(), pressure.size());
+    for (std::size_t i = 0; i < pressure.size(); ++i) D(i, i) = 1.0;
     const std::vector<double> dtp = D.mul(pressure.data());
     Field load(pressure.size());
     for (std::size_t i = 0; i < pressure.size(); ++i) {

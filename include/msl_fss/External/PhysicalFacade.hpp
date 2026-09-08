@@ -15,8 +15,8 @@ namespace external {
 // that validate the coupling contract with dummy data.
 //
 // The traits indicate, at compile time, the regime (transient/stationary) and
-// the field arity (scalar/vectorial) of each physical subproblem, mirroring
-// the MFEMTraits of the MSL stack.
+// the field arity (scalar/vectorial) of each physical subproblem. The regime
+// mirrors RegimeTrait<T> from msl_core; the arity is product-local.
 template <bool TRANSIENT, bool VECTORIAL>
 class PhysicalFacade {
 public:
